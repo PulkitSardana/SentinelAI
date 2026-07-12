@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  user_id   String
+  is_active Boolean  @default(true)
+  last_seen DateTime @default(now())
+  
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  name                  String
+  email                 String    @unique
+  password_hash         String
+  role                  String    @default("ANALYST")
+  is_active             Boolean   @default(true)
+  email_verified        Boolean   @default(false)
+  last_login            DateTime?
+  failed_login_attempts Int       @default(0)
+  
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  // Relationships
+  accounts              Account[]
+  sessions              Session[]
+  cases                 InvestigationCase[]
+  audit_logs            AuditLog[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------
+// AI RISK INTELLIGENCE MODELS
+// ---------------------------------------------------------
+
+model Account {
+  id               String        @id @default(uuid())
+  user_id          String
+  account_status   String        @default("ACTIVE")
+  risk_level       Float         @default(0.0) // 0.0 to 1.0 (Higher = Riskier)
+
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  // Relationships
+  user             User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions     Transaction[]
+
+  @@map("accounts")
+}
+
+model Merchant {
+  id                         String    @id @default(uuid())
+  merchant_category          String
+  merchant_country           String
+  merchant_risk_score        Float     @default(0.0) // 0.0 to 1.0
+  average_transaction_amount Float     @default(0.0)
+  historical_fraud_rate      Float     @default(0.0)
+
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @updatedAt
+
+  // Relationships
+  transactions               Transaction[]
+
+  @@map("merchants")
+}
+
+model Transaction {
+  id                  String             @id @default(uuid())
+  amount              Float
+  currency            String
+  merchant_id         String
+  account_id          String
+  
+  // Feature Engineering Attributes (Crucial for ML)
+  device_id           String?
+  device_type         String?            // e.g., 'mobile', 'desktop'
+  ip_address          String?
+  browser             String?
+  operating_system    String?
+  city                String?
+  country             String?
+  payment_method      String?            // e.g., 'credit_card', 'paypal'
+  transaction_channel String?            // e.g., 'web', 'in_store'
+  
+  // Phase 8: Real Data Upgrades
+  is_fraud_ground_truth Boolean?
+  processing_time_ms  Float?
+  
+  status              String             @default("PENDING")
+  timestamp           DateTime           @default(now())
+
+  // Relationships
+  merchant            Merchant           @relation(fields: [merchant_id], references: [id])
+  account             Account            @relation(fields: [account_id], references: [id])
+  fraud_alerts        FraudAlert[]
+
+  @@map("transactions")
+  @@index([account_id])
+  @@index([merchant_id])
+  @@index([timestamp])
+}
+
+model FraudAlert {
+  id                 String        @id @default(uuid())
+  transaction_id     String
+  risk_score         Float         // 0.0 to 1.0 assigned by ML
+  fraud_probability  Float         // 0.0 to 1.0 raw probability from model
+  severity           String
+  recommended_action String?       // e.g., 'Block Account', 'Require MFA'
+  
+  status             String        @default("OPEN")
+  analyst_notes      String?
+  resolved_by        String?       // ID of Analyst/Investigator who closed it
+  case_id            String?       // Optional link to an InvestigationCase
+
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  // Relationships
+  transaction        Transaction   @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+  investigation_case InvestigationCase? @relation(fields: [case_id], references: [id], onDelete: SetNull)
+
+  @@map("fraud_alerts")
+  @@index([status])
+  @@index([case_id])
+}
+
+model InvestigationCase {
+  id                 String        @id @default(uuid())
+  title              String
+  status             String        @default("OPEN") // OPEN, INVESTIGATING, ON_HOLD, CLOSED
+  priority           String        @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  assignee_id        String?
+  sla_deadline       DateTime?
+  internal_notes     String?
+
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+
+  // Relationships
+  assignee           User?         @relation(fields: [assignee_id], references: [id])
+  alerts             FraudAlert[]
+
+  @@map("investigation_cases")
+  @@index([status])
+  @@index([assignee_id])
+}
+
+// ---------------------------------------------------------
+// AUDIT & COMPLIANCE
+// ---------------------------------------------------------
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  entity_type     String   // e.g., 'Transaction', 'FraudAlert', 'User'
+  entity_id       String
+  action          String   // e.g., 'UPDATE_STATUS', 'BLOCK_ACCOUNT'
+  actor_id        String?  // ID of the user/system who performed the action
+  previous_values String?  // JSON stringified previous state
+  new_values      String?  // JSON stringified new state
+  ip_address      String?
+  timestamp       DateTime @default(now())
+
+  // Relationships
+  actor           User?    @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+  @@index([entity_id])
+  @@index([actor_id])
+  @@index([timestamp])
+}
