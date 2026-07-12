@@ -1,6 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from datetime import datetime, timezone
+import uuid
 
 from app.api.endpoints import predict, health, monitoring
 
@@ -31,6 +35,36 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api/v1", tags=["Health"])
 app.include_router(predict.router, prefix="/api/v1", tags=["Prediction"])
 app.include_router(monitoring.router, prefix="/api/v1", tags=["Monitoring"])
+
+# Standardized Error Handling
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "status": "error",
+            "code": 422,
+            "message": f"Validation Error: {exc.errors()}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "requestId": req_id
+        }
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception caught: {exc}")
+    req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "status": "error",
+            "code": 500,
+            "message": "Internal Server Error",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "requestId": req_id
+        }
+    )
 
 @app.on_event("startup")
 async def startup_event():

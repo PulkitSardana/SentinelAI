@@ -89,9 +89,9 @@ app.use((err: Error | APIError, req: Request, res: Response, next: NextFunction)
     logger.error({ err, reqId: (req as unknown as { id: string }).id }, message);
 
     res.status(statusCode).json({
-        success: false,
+        status: 'error',
+        code: statusCode,
         message,
-        data: null,
         timestamp: new Date().toISOString(),
         requestId: (req as unknown as { id: string }).id || 'unknown',
     });

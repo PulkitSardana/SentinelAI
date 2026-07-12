@@ -62,6 +62,9 @@ class BullMQService implements IQueueService {
   }
 
   private async processTransaction(payload: TransactionPayload): Promise<void> {
+    const traceId = payload.merchant_id || 'unknown';
+    logger.info({ traceId }, 'Step 1: Job picked up from Queue by Worker');
+
     // 1. Save to DB as PENDING
     const transaction = await prisma.transaction.create({
       data: {
@@ -72,6 +75,7 @@ class BullMQService implements IQueueService {
 
     try {
       // 2. Call ML Service
+      logger.info({ traceId }, 'Step 2: Calling Python ML Service for inference');
       const riskAssessment = await mlService.evaluateRisk(payload);
 
       // 3. Determine status
@@ -80,6 +84,7 @@ class BullMQService implements IQueueService {
       else if (riskAssessment.risk_score > 0.65) finalStatus = 'FLAGGED';
 
       // 4. Update DB
+      logger.info({ traceId, status: finalStatus }, 'Step 3: ML Inference complete. Updating PostgreSQL Database');
       const updatedTx = await prisma.transaction.update({
         where: { id: transaction.id },
         data: { status: finalStatus },
@@ -99,6 +104,7 @@ class BullMQService implements IQueueService {
       }
 
       // 6. Broadcast via SSE
+      logger.info({ traceId }, 'Step 4: Database commit successful. Broadcasting to Frontend via SSE Stream');
       streamService.broadcastTransaction({
         ...updatedTx,
         risk_score: riskAssessment.risk_score,
@@ -109,7 +115,7 @@ class BullMQService implements IQueueService {
       });
 
     } catch (error) {
-      logger.error('Failed to process transaction in worker', error);
+      logger.error({ traceId, error }, 'Failed to process transaction in worker');
       // Update DB to error state
       await prisma.transaction.update({
         where: { id: transaction.id },

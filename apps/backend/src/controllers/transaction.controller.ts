@@ -5,6 +5,7 @@ import { TransactionRepository } from '@/repositories/transaction.repository';
 import { TransactionIngestionDTO, TransactionQueryDTO } from '@/schemas/transaction.schema';
 import { streamService } from '@/services/stream.service';
 import { APIResponse } from '@/utils/apiResponse';
+import { logger } from '@/utils/logger';
 import { Prisma } from '@prisma/client';
 
 export class TransactionController {
@@ -27,6 +28,9 @@ export class TransactionController {
       // Setup the queue service (assuming it's imported at the top)
       const { queueService } = require('../services/queue.service');
       
+      const traceId = payload.merchant_id || 'unknown';
+      logger.info({ traceId }, 'Step 0: API Gateway received transaction payload. Enqueuing to BullMQ.');
+
       // Enqueue for asynchronous processing
       await queueService.enqueueTransaction(payload);
       
