@@ -1,15 +1,35 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Terminal, Bug, Server, Shield, StopCircle, PlayCircle, Download } from "lucide-react"
+import { Terminal, Bug, Server, Shield, StopCircle, PlayCircle, Download, Activity, Cpu } from "lucide-react"
 import { useTransactionStore } from "@/store/use-transaction-store"
 import { useLiveTransactions } from "@/hooks/use-live-transactions"
+import { PageTransition } from "@/components/layout/page-transition"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
+
+const generateMockTelemetry = (count = 20) => {
+  const data = []
+  let time = Date.now() - count * 1000
+  for (let i = 0; i < count; i++) {
+    data.push({
+      time: time,
+      cpu: 30 + Math.random() * 20 + (Math.sin(i / 3) * 15),
+      memory: 45 + Math.random() * 10,
+    })
+    time += 1000
+  }
+  return data
+}
 
 export default function DevToolsPage() {
   const [isTailing, setIsTailing] = useState(true)
   const [logs, setLogs] = useState<any[]>([])
   const [filter, setFilter] = useState('ALL')
   const logsEndRef = useRef<HTMLDivElement>(null)
+  
+  const [telemetry, setTelemetry] = useState(generateMockTelemetry(30))
 
   useLiveTransactions() // Ensure SSE is connected
   const { transactions } = useTransactionStore()
@@ -84,72 +104,168 @@ export default function DevToolsPage() {
     }
   }, [logs, isTailing])
 
+  // Update telemetry smoothly
+  useEffect(() => {
+    if (!isTailing) return
+    const interval = setInterval(() => {
+      setTelemetry(prev => {
+        const newData = [...prev.slice(1)]
+        newData.push({
+          time: Date.now(),
+          cpu: 30 + Math.random() * 20 + (Math.sin(Date.now() / 3000) * 15),
+          memory: 45 + Math.random() * 5 + (Math.sin(Date.now() / 10000) * 5),
+        })
+        return newData
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [isTailing])
+
   const filteredLogs = filter === 'ALL' ? logs : logs.filter(l => l.level === filter)
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6 h-[calc(100vh-64px)] flex flex-col">
-      <div className="flex items-center justify-between space-y-2 mb-2">
-        <h2 className="text-3xl font-bold tracking-tight">Developer Tools</h2>
-      </div>
+    <PageTransition>
+      <div className="flex h-[calc(100vh-6rem)] flex-col space-y-4 p-6 max-w-[1600px] mx-auto overflow-hidden">
+        <div className="flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+              <Terminal className="h-8 w-8 text-blue-500" />
+              Developer Tools
+            </h2>
+            <p className="text-slate-400 mt-2">
+              Live system telemetry and raw execution logs.
+            </p>
+          </div>
+        </div>
 
-      <div className="flex-1 border rounded-xl bg-card shadow overflow-hidden flex flex-col">
-        {/* Toolbar */}
-        <div className="bg-muted/50 p-4 border-b flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex bg-background border rounded-md overflow-hidden">
-              {['ALL', 'INFO', 'WARN', 'ERROR', 'DEBUG'].map(level => (
-                <button
-                  key={level}
-                  onClick={() => setFilter(level)}
-                  className={`px-3 py-1.5 text-xs font-semibold ${
-                    filter === level ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-            
-            <button 
-              onClick={() => setIsTailing(!isTailing)} 
-              className={`flex items-center text-xs font-semibold px-3 py-1.5 rounded-md border ${
-                isTailing ? 'bg-destructive/10 text-destructive border-destructive/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-              }`}
-            >
-              {isTailing ? <StopCircle className="h-3 w-3 mr-2" /> : <PlayCircle className="h-3 w-3 mr-2" />}
-              {isTailing ? 'Pause Tail' : 'Resume Tail'}
-            </button>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+          
+          {/* Telemetry Charts */}
+          <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">
+            <Card className="bg-slate-900/50 backdrop-blur border-slate-800 shadow-xl flex-1 flex flex-col">
+              <CardHeader className="border-b border-slate-800/60 bg-slate-900/80 pb-3 shrink-0">
+                <CardTitle className="text-sm font-semibold text-slate-200 flex items-center gap-2 uppercase tracking-wider">
+                  <Cpu className="h-4 w-4 text-blue-400" /> System Resources
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 flex-1 flex flex-col justify-center min-h-0">
+                <div className="h-[45%] w-full mb-4">
+                  <div className="text-xs text-slate-400 mb-2 font-mono uppercase tracking-wider flex justify-between">
+                    <span>CPU Usage</span>
+                    <span className="text-blue-400">{telemetry[telemetry.length-1].cpu.toFixed(1)}%</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={telemetry} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="time" hide />
+                      <YAxis domain={[0, 100]} hide />
+                      <Area type="monotone" dataKey="cpu" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCpu)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="h-[45%] w-full">
+                  <div className="text-xs text-slate-400 mb-2 font-mono uppercase tracking-wider flex justify-between">
+                    <span>Memory Usage</span>
+                    <span className="text-emerald-400">{telemetry[telemetry.length-1].memory.toFixed(1)}%</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={telemetry} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="time" hide />
+                      <YAxis domain={[0, 100]} hide />
+                      <Area type="monotone" dataKey="memory" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorMem)" isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <button className="flex items-center text-xs font-semibold px-3 py-1.5 text-muted-foreground hover:text-foreground">
-            <Download className="h-3 w-3 mr-2" />
-            Export Logs
-          </button>
-        </div>
+          {/* Log Terminal */}
+          <div className="lg:col-span-8 flex flex-col gap-6 overflow-hidden">
+            <Card className="bg-slate-950 border-slate-800 shadow-xl flex-1 flex flex-col overflow-hidden">
+              {/* Toolbar */}
+              <div className="bg-slate-900 border-b border-slate-800 p-3 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+                    {['ALL', 'INFO', 'WARN', 'ERROR', 'DEBUG'].map(level => (
+                      <button
+                        key={level}
+                        onClick={() => setFilter(level)}
+                        className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                          filter === level 
+                            ? 'bg-blue-600 text-white' 
+                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                        }`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setIsTailing(!isTailing)} 
+                    className={`h-8 text-[10px] font-bold uppercase tracking-wider border transition-colors ${
+                      isTailing 
+                        ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 hover:text-red-300' 
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 hover:text-emerald-300'
+                    }`}
+                  >
+                    {isTailing ? <StopCircle className="h-3 w-3 mr-2" /> : <PlayCircle className="h-3 w-3 mr-2" />}
+                    {isTailing ? 'Pause Tail' : 'Resume Tail'}
+                  </Button>
+                </div>
 
-        {/* Log Viewer */}
-        <div className="flex-1 bg-black p-4 overflow-y-auto font-mono text-sm">
-          {filteredLogs.length === 0 ? (
-            <div className="text-muted-foreground text-center pt-10">Waiting for logs...</div>
-          ) : (
-            filteredLogs.map(log => (
-              <div key={log.id} className="flex gap-4 py-1 hover:bg-white/5 border-b border-white/5 last:border-0">
-                <span className="text-gray-500 shrink-0">{new Date(log.timestamp).toISOString().split('T')[1].replace('Z', '')}</span>
-                <span className={`shrink-0 w-16 font-bold ${
-                  log.level === 'INFO' ? 'text-blue-400' :
-                  log.level === 'WARN' ? 'text-yellow-400' :
-                  log.level === 'ERROR' ? 'text-red-400' : 'text-gray-400'
-                }`}>
-                  [{log.level}]
-                </span>
-                <span className="text-purple-400 shrink-0 w-32 truncate">[{log.service}]</span>
-                <span className="text-gray-300 break-all">{log.message}</span>
+                <Button variant="ghost" size="sm" className="h-8 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+                  <Download className="h-3 w-3 mr-2" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Export Logs</span>
+                </Button>
               </div>
-            ))
-          )}
-          <div ref={logsEndRef} />
+
+              {/* Log Viewer */}
+              <div className="flex-1 bg-slate-950 p-4 overflow-y-auto font-mono text-[11px] leading-relaxed">
+                {filteredLogs.length === 0 ? (
+                  <div className="text-slate-600 text-center pt-10 flex flex-col items-center justify-center">
+                    <Activity className="h-8 w-8 mb-4 opacity-20" />
+                    Waiting for log stream...
+                  </div>
+                ) : (
+                  filteredLogs.map(log => (
+                    <div key={log.id} className="flex gap-4 py-1 hover:bg-slate-800/50 rounded px-2 -mx-2 transition-colors">
+                      <span className="text-slate-500 shrink-0 select-none">
+                        {new Date(log.timestamp).toISOString().split('T')[1].replace('Z', '')}
+                      </span>
+                      <span className={`shrink-0 w-12 font-bold select-none ${
+                        log.level === 'INFO' ? 'text-blue-400' :
+                        log.level === 'WARN' ? 'text-amber-400' :
+                        log.level === 'ERROR' ? 'text-red-400' : 'text-slate-400'
+                      }`}>
+                        [{log.level}]
+                      </span>
+                      <span className="text-purple-400 shrink-0 w-32 truncate select-none">[{log.service}]</span>
+                      <span className="text-slate-300 break-all">{log.message}</span>
+                    </div>
+                  ))
+                )}
+                <div ref={logsEndRef} className="h-4" />
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }
