@@ -46,4 +46,4 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 4000
 
 # Apply database migrations and start the compiled application
-CMD npx --yes prisma migrate deploy && node dist/server.js
+CMD npx --yes prisma migrate deploy && node dist/src/server.js
