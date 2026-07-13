@@ -10,7 +10,7 @@ COPY tsconfig.json ./
 COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies needed for build)
-RUN npm ci
+RUN npm install
 
 # Generate Prisma Client
 RUN npx --yes prisma generate
@@ -34,7 +34,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ONLY production dependencies to keep image size small
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Generate Prisma Client for the production environment
 RUN npx --yes prisma generate
