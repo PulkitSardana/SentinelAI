@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useTransactionStore } from '@/store/use-transaction-store'
 import { TransactionAlert } from '@/types'
 
-const STREAM_URL = 'http://localhost:4000/api/v1/transactions/stream'
+const STREAM_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/transactions/stream`
 
 export function useLiveTransactions() {
   const { addTransaction, setConnected, isConnected } = useTransactionStore()

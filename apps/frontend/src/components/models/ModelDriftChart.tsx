@@ -8,7 +8,7 @@ import useSWR from "swr"
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function ModelDriftChart() {
-  const { data, error, isLoading } = useSWR('http://localhost:8000/api/v1/monitoring/drift', fetcher, {
+  const { data, error, isLoading } = useSWR(`${process.env.NEXT_PUBLIC_ML_URL || 'http://localhost:8000/api/v1'}/monitoring/drift`, fetcher, {
     refreshInterval: 10000 // Poll every 10s
   })
 

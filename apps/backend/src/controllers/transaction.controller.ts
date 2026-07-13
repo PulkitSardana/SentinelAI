@@ -6,7 +6,7 @@ import { TransactionIngestionDTO, TransactionQueryDTO } from '@/schemas/transact
 import { streamService } from '@/services/stream.service';
 import { APIResponse } from '@/utils/apiResponse';
 import { logger } from '@/utils/logger';
-import { Prisma } from '@prisma/client';
+import { prisma } from '@/database/prisma';
 
 export class TransactionController {
   
@@ -25,17 +25,28 @@ export class TransactionController {
     const payload = req.body as TransactionIngestionDTO;
     
     try {
+      const correlationId = req.headers['x-correlation-id'] as string;
+      const traceId = payload.merchant_id || 'unknown';
+      logger.info({ traceId, correlationId }, 'Step 0: API Gateway received transaction payload. Writing to PostgreSQL.');
+
+      // 1. Durably save to DB as QUEUED
+      const transaction = await prisma.transaction.create({
+        data: {
+          ...payload,
+          status: 'QUEUED',
+        },
+      });
+
       // Setup the queue service (assuming it's imported at the top)
       const { queueService } = require('../services/queue.service');
       
-      const traceId = payload.merchant_id || 'unknown';
-      logger.info({ traceId }, 'Step 0: API Gateway received transaction payload. Enqueuing to BullMQ.');
+      logger.info({ traceId, transactionId: transaction.id }, 'Step 0.5: Enqueuing to BullMQ.');
 
-      // Enqueue for asynchronous processing
-      await queueService.enqueueTransaction(payload);
+      // 2. Enqueue only the UUID for asynchronous processing
+      await queueService.enqueueTransaction({ transactionId: transaction.id, correlationId });
       
       res.status(StatusCodes.ACCEPTED).json(
-        APIResponse.success('Transaction queued successfully', { status: 'QUEUED' })
+        APIResponse.success('Transaction queued successfully', { status: 'QUEUED', transaction_id: transaction.id })
       );
     } catch (error) {
       console.error('Failed to queue transaction:', error);

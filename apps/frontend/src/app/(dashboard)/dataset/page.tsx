@@ -29,7 +29,7 @@ export default function DatasetExplorerPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/mlops/dataset`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}`}/mlops/dataset`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
@@ -164,7 +164,7 @@ export default function DatasetExplorerPage() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => value.toLocaleString()}
+                  formatter={(value: any) => typeof value === 'number' ? value.toLocaleString() : value}
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }}
                   itemStyle={{ color: 'hsl(var(--foreground))' }}
                 />

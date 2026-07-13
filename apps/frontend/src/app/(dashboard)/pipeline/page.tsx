@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useLiveTransactions } from "@/hooks/use-live-transactions"
+import { useTransactionStore } from "@/store/use-transaction-store"
 import { Activity, Database, CheckCircle2, AlertTriangle, XCircle, BrainCircuit, Lock, Network, Cpu } from "lucide-react"
 
 export default function PipelinePage() {
-  const { transactions } = useLiveTransactions()
+  useLiveTransactions()
+  const { transactions } = useTransactionStore()
   const [activeNode, setActiveNode] = useState(0)
   const [lastProcessed, setLastProcessed] = useState<any>(null)
 
@@ -104,7 +106,7 @@ export default function PipelinePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-xs text-muted-foreground uppercase">Amount</span>
-                    <div className="font-bold">${lastProcessed.amount}</div>
+                    <div className="font-bold">${(lastProcessed.amount / 100).toFixed(2)}</div>
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground uppercase">Location</span>

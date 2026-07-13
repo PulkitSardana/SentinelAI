@@ -12,7 +12,7 @@ import useSWR from "swr"
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function CasesPage() {
-  const { data, error, isLoading } = useSWR('http://localhost:4000/api/v1/cases', fetcher, {
+  const { data, error, isLoading } = useSWR(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/cases`, fetcher, {
     refreshInterval: 5000 // Poll every 5s
   })
 

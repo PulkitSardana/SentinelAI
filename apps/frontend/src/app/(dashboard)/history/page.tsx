@@ -77,7 +77,7 @@ export const columns: ColumnDef<TransactionAlert>[] = [
     accessorKey: "amount",
     header: () => <div className="text-right">Amount</div>,
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"))
+      const amount = parseFloat(row.getValue("amount")) / 100
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",

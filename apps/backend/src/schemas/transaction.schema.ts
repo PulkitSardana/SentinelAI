@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const transactionIngestionSchema = z.object({
   body: z.object({
-    amount: z.number().positive('Amount must be positive'),
+    amount: z.number().int('Amount must be an integer (in cents)').positive('Amount must be positive'),
     currency: z.string().length(3, 'Currency must be a 3-letter ISO code'),
     merchant_id: z.string().uuid('Invalid merchant ID'),
     account_id: z.string().uuid('Invalid account ID'),

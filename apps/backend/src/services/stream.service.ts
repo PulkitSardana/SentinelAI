@@ -10,6 +10,11 @@ class StreamService extends EventEmitter {
     super();
     // Increase max listeners to prevent memory leak warnings if many clients connect
     this.setMaxListeners(100);
+
+    // Heartbeat mechanism to prevent memory leaks from stale TCP connections
+    setInterval(() => {
+      this.broadcast('ping', { timestamp: new Date().toISOString() });
+    }, 15000);
   }
 
   public static getInstance(): StreamService {
@@ -17,6 +22,10 @@ class StreamService extends EventEmitter {
       StreamService.instance = new StreamService();
     }
     return StreamService.instance;
+  }
+
+  public getClientCount(): number {
+    return this.clients.size;
   }
 
   /**

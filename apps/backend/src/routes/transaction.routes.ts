@@ -10,9 +10,12 @@ const router = Router();
 // Streaming endpoint (SSE) - No Auth for easy testing
 router.get('/stream', TransactionController.streamTransactions);
 
+import { idempotencyMiddleware } from '@/middlewares/idempotency.middleware';
+
 // Ingestion endpoint - Bypassed auth for Simulator
 router.post(
   '/',
+  idempotencyMiddleware,
   validateRequest(transactionIngestionSchema),
   asyncHandler(TransactionController.ingest)
 );

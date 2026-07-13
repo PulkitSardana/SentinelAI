@@ -62,11 +62,11 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="model-endpoint">Inference Engine Endpoint</Label>
-                <Input id="model-endpoint" defaultValue="http://localhost:8000/api/v1/predict" />
+                <Input id="model-endpoint" defaultValue={`${process.env.NEXT_PUBLIC_ML_URL || 'http://localhost:8000/api/v1'}/predict`} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="sse-endpoint">Streaming Engine URL (SSE)</Label>
-                <Input id="sse-endpoint" defaultValue="http://localhost:4000/api/v1/transactions/stream" />
+                <Input id="sse-endpoint" defaultValue={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/transactions/stream`} />
               </div>
               <Button>Save Configuration</Button>
             </CardContent>

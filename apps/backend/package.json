@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "jest",
+    "test": "jest --forceExit --detectOpenHandles",
     "lint": "eslint src/**/*.ts"
   },
   "keywords": [],
@@ -54,6 +54,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
+    "autocannon": "^8.0.0",
     "eslint": "^10.6.0",
     "husky": "^9.1.7",
     "jest": "^30.4.2",

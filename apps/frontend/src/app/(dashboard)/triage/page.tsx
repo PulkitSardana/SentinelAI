@@ -45,7 +45,7 @@ export default function TriagePage() {
   const [rowSelection, setRowSelection] = React.useState({})
   const router = useRouter()
 
-  const { data, error, isLoading, mutate } = useSWR('http://localhost:4000/api/v1/alerts/triage', fetcher, {
+  const { data, error, isLoading, mutate } = useSWR(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/alerts/triage`, fetcher, {
     refreshInterval: 5000 // Poll every 5s for new alerts
   })
 
@@ -57,7 +57,7 @@ export default function TriagePage() {
       riskScore: Math.round(a.risk_score * 100),
       ruleTriggered: a.severity + ' Alert: ' + (a.recommended_action || 'Review needed'),
       entityType: "Transaction",
-      amount: `$${a.transaction?.amount?.toFixed(2) || '0.00'}`,
+      amount: `$${a.transaction?.amount ? (a.transaction.amount / 100).toFixed(2) : '0.00'}`,
       status: a.status === 'OPEN' ? 'Unassigned' : 'Assigned',
       priority: a.severity === 'CRITICAL' ? 'Critical' : a.severity === 'HIGH' ? 'High' : 'Medium'
     })) as TriageAlert[]
@@ -154,7 +154,7 @@ export default function TriagePage() {
 
     const alertIds = selectedRows.map(r => r.original.id)
     try {
-      const res = await fetch('http://localhost:4000/api/v1/cases', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/cases`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

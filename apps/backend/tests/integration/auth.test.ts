@@ -4,8 +4,17 @@ import { UserRepository } from '../../src/repositories/user.repository';
 import { StatusCodes } from 'http-status-codes';
 import bcrypt from 'bcrypt';
 
+import { prisma } from '../../src/database/prisma';
+
 // Mock the UserRepository to avoid hitting a real Postgres database in tests
 jest.mock('../../src/repositories/user.repository');
+jest.mock('../../src/database/prisma', () => ({
+  prisma: {
+    session: {
+      create: jest.fn(),
+    }
+  }
+}));
 
 describe('Auth Endpoints', () => {
   beforeEach(() => {
@@ -13,6 +22,7 @@ describe('Auth Endpoints', () => {
   });
 
   const testUser = {
+    name: 'Test User',
     email: 'test@sentinelai.com',
     password: 'Password123!',
   };
@@ -43,7 +53,7 @@ describe('Auth Endpoints', () => {
       .send(testUser);
 
     expect(response.status).toBe(StatusCodes.CONFLICT);
-    expect(response.body.success).toBe(false);
+    expect(response.body.status).toBe('error');
   });
 
   it('should login user and return token', async () => {
@@ -91,6 +101,6 @@ describe('Auth Endpoints', () => {
       });
 
     expect(response.status).toBe(StatusCodes.UNAUTHORIZED);
-    expect(response.body.success).toBe(false);
+    expect(response.body.status).toBe('error');
   });
 });

@@ -66,7 +66,7 @@ def map_row_to_payload(row):
         is_fraud = row.get('is_fraud', '0') == '1'
 
         payload = {
-            "amount": float(row['amt']),
+            "amount": int(float(row['amt']) * 100),
             "currency": "USD", # Defaulting to USD for this US dataset
             "merchant_id": generate_deterministic_uuid(merchant_clean),
             "account_id": generate_deterministic_uuid(cc_num),

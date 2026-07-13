@@ -22,4 +22,5 @@ export interface TransactionAlert {
     feature: string;
     contribution: number;
   }>;
+  processing_time_ms?: number;
 }

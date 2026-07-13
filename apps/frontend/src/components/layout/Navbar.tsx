@@ -27,7 +27,7 @@ export function Navbar() {
 
     const fetchActiveSessions = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/v1/auth/active-sessions', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/auth/active-sessions`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         const data = await res.json()

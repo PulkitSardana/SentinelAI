@@ -49,7 +49,7 @@ export function LiveTable() {
                 {format(new Date(transaction.timestamp), 'HH:mm:ss')}
               </div>
               <div className="col-span-1 font-semibold">
-                ${transaction.amount.toFixed(2)}
+                ${(transaction.amount / 100).toFixed(2)}
               </div>
               <div className="col-span-1 truncate pr-2">
                 {transaction.merchant_id.substring(0, 8)}...

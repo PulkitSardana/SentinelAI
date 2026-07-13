@@ -71,7 +71,7 @@ export default function ExplainabilityStudioPage() {
                     </span>
                   </div>
                   <div className="text-muted-foreground text-xs flex justify-between">
-                    <span>${t.amount}</span>
+                    <span>${(t.amount / 100).toFixed(2)}</span>
                     <span>{new Date(t.timestamp).toLocaleTimeString()}</span>
                   </div>
                 </button>
@@ -94,7 +94,7 @@ export default function ExplainabilityStudioPage() {
                 <div>
                   <h3 className="text-2xl font-bold font-mono tracking-tighter">{selectedTx.id}</h3>
                   <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
-                    <span>Amount: <strong className="text-foreground">${selectedTx.amount}</strong></span>
+                    <span>Amount: <strong className="text-foreground">${(selectedTx.amount / 100).toFixed(2)}</strong></span>
                     <span>•</span>
                     <span>Location: <strong className="text-foreground">{selectedTx.city}, {selectedTx.country}</strong></span>
                     <span>•</span>

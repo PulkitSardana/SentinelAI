@@ -11,7 +11,23 @@ import { logger } from '@/utils/logger';
 import { APIError } from '@/utils/apiError';
 import { APIResponse } from '@/utils/apiResponse';
 
+import rateLimit from 'express-rate-limit';
+
 const app: Express = express();
+
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 1000000, // Increased from 1000 to 1000000 for Benchmarking Phase
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 'error',
+    code: StatusCodes.TOO_MANY_REQUESTS,
+    message: 'Too many requests from this IP, please try again later.',
+  }
+});
+
+app.use(limiter);
 
 // 1. Security & Utility Middlewares
 app.use(helmet()); // Set secure HTTP headers
@@ -29,8 +45,21 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' })); // Parse URL-enc
 app.use(cookieParser()); // Parse cookies
 app.use(hpp()); // Prevent HTTP Parameter Pollution
 
+import { randomUUID } from 'crypto';
+
+// 1.5 Inject Correlation ID
+app.use((req, res, next) => {
+  const correlationId = req.headers['x-correlation-id'] || randomUUID();
+  req.headers['x-correlation-id'] = correlationId;
+  res.setHeader('X-Correlation-ID', correlationId);
+  next();
+});
+
 // 2. Logging Middleware (Pino)
-app.use(pinoHttp({ logger }));
+app.use(pinoHttp({ 
+  logger,
+  genReqId: (req) => (req.headers['x-correlation-id'] as string) || 'unknown',
+}));
 
 // 3. API Routes (Health Checks)
 app.get('/api/v1/health', (req: Request, res: Response) => {
@@ -42,7 +71,6 @@ app.get('/api/v1/live', (req: Request, res: Response) => {
 });
 
 app.get('/api/v1/ready', (req: Request, res: Response) => {
-  // TODO: Add database connection check here later
   res.status(StatusCodes.OK).json(APIResponse.success('Server is ready to accept traffic'));
 });
 
@@ -52,6 +80,26 @@ app.use('/api/v1/auth', authRoutes);
 
 // Transaction Routes
 import transactionRoutes from './routes/transaction.routes';
+import { queueService } from './services/queue.service';
+import { streamService } from './services/stream.service';
+
+app.get('/api/v1/system/metrics', async (req, res) => {
+  const queueMetrics = await queueService.getMetrics();
+  const memoryUsage = process.memoryUsage();
+  
+  res.status(200).json(APIResponse.success('System metrics retrieved', {
+    queue: queueMetrics,
+    memory: {
+      rss: `${Math.round(memoryUsage.rss / 1024 / 1024)} MB`,
+      heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)} MB`,
+      heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB`,
+    },
+    sse: {
+      activeClients: streamService.getClientCount(),
+    }
+  }));
+});
+
 app.use('/api/v1/transactions', transactionRoutes);
 
 // Case Routes
@@ -85,15 +133,16 @@ app.use((err: Error | APIError, req: Request, res: Response, next: NextFunction)
         message = err.message;
     }
 
-    // Log the error via Pino. pino-http automatically attaches req.id to the req object.
-    logger.error({ err, reqId: (req as unknown as { id: string }).id }, message);
+    const correlationId = req.headers['x-correlation-id'] as string;
+    
+    logger.error({ err, correlationId }, message);
 
     res.status(statusCode).json({
         status: 'error',
         code: statusCode,
         message,
         timestamp: new Date().toISOString(),
-        requestId: (req as unknown as { id: string }).id || 'unknown',
+        correlationId,
     });
 });
 

@@ -52,9 +52,9 @@ export class TransactionService {
       });
     }
 
-    if (account.account_status !== 'ACTIVE') {
+    if (account!.account_status !== 'ACTIVE') {
       throw new APIError(
-        `Cannot process transaction: Account is ${account.account_status}`,
+        `Cannot process transaction: Account is ${account!.account_status}`,
         StatusCodes.FORBIDDEN
       );
     }

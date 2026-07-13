@@ -27,7 +27,7 @@ export default function ModelRegistryPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/mlops/registry`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}`}/mlops/registry`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {

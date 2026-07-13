@@ -111,7 +111,7 @@ export function InvestigationPanel({ transaction, open, onOpenChange }: Investig
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-card border space-y-1">
                 <div className="text-sm text-muted-foreground flex items-center gap-2"><CreditCard className="w-4 h-4" /> Amount</div>
-                <div className="font-semibold text-lg">${transaction.amount.toFixed(2)} {transaction.currency}</div>
+                <div className="font-semibold text-lg">${(transaction.amount / 100).toFixed(2)} {transaction.currency}</div>
               </div>
               <div className="p-4 rounded-lg bg-card border space-y-1">
                 <div className="text-sm text-muted-foreground flex items-center gap-2"><MapPin className="w-4 h-4" /> Location</div>

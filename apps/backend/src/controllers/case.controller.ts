@@ -34,7 +34,7 @@ export const getCases = asyncHandler(async (req: Request, res: Response) => {
 
 // Get a single case by ID
 export const getCaseById = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   
   const investigationCase = await prisma.investigationCase.findUnique({
     where: { id },
@@ -94,7 +94,7 @@ export const createCase = asyncHandler(async (req: Request, res: Response) => {
 
 // Update a case
 export const updateCase = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { status, priority, assignee_id, internal_notes } = req.body;
 
   const updatedCase = await prisma.investigationCase.update({

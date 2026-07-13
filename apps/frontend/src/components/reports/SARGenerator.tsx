@@ -15,7 +15,7 @@ export function SARGenerator() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedText, setGeneratedText] = useState("")
 
-  const { data, error, isLoading } = useSWR('http://localhost:4000/api/v1/cases', fetcher, {
+  const { data, error, isLoading } = useSWR(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/cases`, fetcher, {
     refreshInterval: 5000
   })
 

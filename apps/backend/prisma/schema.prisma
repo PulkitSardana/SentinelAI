@@ -66,7 +66,7 @@ model Merchant {
   merchant_category          String
   merchant_country           String
   merchant_risk_score        Float     @default(0.0) // 0.0 to 1.0
-  average_transaction_amount Float     @default(0.0)
+  average_transaction_amount Int       @default(0)   // Stored in cents
   historical_fraud_rate      Float     @default(0.0)
 
   created_at                 DateTime  @default(now())
@@ -80,7 +80,7 @@ model Merchant {
 
 model Transaction {
   id                  String             @id @default(uuid())
-  amount              Float
+  amount              Int                // Stored in cents (e.g., $10.50 = 1050) to avoid floating point precision errors
   currency            String
   merchant_id         String
   account_id          String

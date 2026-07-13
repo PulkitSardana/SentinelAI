@@ -64,3 +64,20 @@ This document outlines the core technical decisions made during the architecture
 
 **Why?**
 - **The Right Tool for the Job:** Node.js excels at asynchronous I/O and connection multiplexing (handling hundreds of SSE clients). However, Python is the unquestioned standard for ML. By splitting them, we prevent CPU-bound XGBoost inference from blocking the Node.js event loop, enabling true enterprise scalability.
+
+## 8. Financial Data Model: Int Cents vs. Float vs. Decimal
+
+**Decision:** We chose **Integer (Cents)** over Float or PostgreSQL Decimal.
+
+**Why?**
+- **Precision:** Floats in databases and JavaScript lead to notorious rounding errors in financial systems (e.g. `$0.10 + $0.20 = $0.30000000000000004`).
+- **Simplicity:** While `DECIMAL` is standard in SQL, dealing with BigNumber/Decimal.js libraries in the Node.js API layer adds serialization friction and memory overhead.
+- **Industry Standard:** Adopting integer-cents maps directly to how platforms like Stripe handle currency (`amount: 1050` instead of `10.50`), representing the smallest atomic unit of currency.
+
+## 9. API Idempotency and Tracing
+
+**Decision:** We chose **Redis-backed Idempotency Keys** and injected **Correlation IDs** across all boundaries.
+
+**Why?**
+- **Idempotency:** In distributed systems, network partitions happen. If a client sends a transaction but drops connection before the API responds, they will retry. Without an `Idempotency-Key` (cached in Redis), we would double-charge the account. Redis handles this with extremely low latency.
+- **Observability:** Distributed architectures are notoriously hard to debug. By generating an `X-Correlation-ID` at the API Gateway and threading it through BullMQ logs, Python ML inference, and DB transactions, we achieve a unified trace across polyglot microservices without the weight of deploying Jaeger or OpenTelemetry.

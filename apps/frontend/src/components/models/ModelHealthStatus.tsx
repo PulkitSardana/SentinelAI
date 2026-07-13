@@ -9,7 +9,7 @@ import useSWR from "swr"
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function ModelHealthStatus() {
-  const { data, error, isLoading } = useSWR('http://localhost:8000/api/v1/monitoring/health', fetcher, {
+  const { data, error, isLoading } = useSWR(`${process.env.NEXT_PUBLIC_ML_URL || 'http://localhost:8000/api/v1'}/monitoring/health`, fetcher, {
     refreshInterval: 10000
   })
 

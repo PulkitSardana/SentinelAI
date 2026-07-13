@@ -24,7 +24,7 @@ export default function ExperimentsPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/mlops/experiments`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}`}/mlops/experiments`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
