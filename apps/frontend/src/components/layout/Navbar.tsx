@@ -35,7 +35,8 @@ export function Navbar() {
           setActiveViewers(data.data)
         }
       } catch (err) {
-        console.error("Failed to fetch active sessions")
+        // Suppress noisy console error for active sessions poll failure (e.g. if DB is down)
+        console.warn("Failed to fetch active sessions");
       }
     }
 
