@@ -4,10 +4,20 @@ import { StatusCodes } from 'http-status-codes';
 import { APIResponse } from '@/utils/apiResponse';
 import { logger } from '@/utils/logger';
 
-const redis = new Redis({
+const redisConfig: any = {
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379', 10),
-});
+};
+
+if (process.env.REDIS_PASSWORD) {
+  redisConfig.password = process.env.REDIS_PASSWORD;
+}
+
+if (process.env.REDIS_TLS === 'true') {
+  redisConfig.tls = {};
+}
+
+const redis = new Redis(redisConfig);
 
 export const idempotencyMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const idempotencyKey = req.headers['idempotency-key'];

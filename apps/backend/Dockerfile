@@ -1,28 +1,49 @@
-FROM node:20-alpine
+# Stage 1: Build environment
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package management files
 COPY package*.json ./
 COPY tsconfig.json ./
+# Copy prisma directory for generation
+COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY . .
+# Install all dependencies (including devDependencies needed for build)
+RUN npm ci
 
 # Generate Prisma Client
-RUN npx prisma generate
+RUN npx --yes prisma generate
 
-# Build TypeScript
-# Note: In production we would build, but for this portfolio project tsx watch is fine, 
-# or we can use tsx to run it directly to avoid build steps.
-# Actually, let's build it properly for an enterprise feel.
-RUN npm run build || true # If there is no build script, just ignore. We'll use tsx in CMD if needed.
+# Copy the rest of the application code
+COPY . .
 
-# Expose port
+# Build the TypeScript project (fails if compilation fails)
+RUN npm run build
+
+# Stage 2: Production environment
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Copy package management files and prisma directory
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install ONLY production dependencies to keep image size small
+RUN npm ci --omit=dev
+
+# Generate Prisma Client for the production environment
+RUN npx --yes prisma generate
+
+# Copy the compiled Javascript from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# Expose the application port
 EXPOSE 4000
 
-# Start server
-CMD ["npx", "tsx", "src/server.ts"]
+# Apply database migrations and start the compiled application
+CMD npx --yes prisma migrate deploy && node dist/server.js

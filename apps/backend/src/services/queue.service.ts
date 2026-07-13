@@ -37,10 +37,18 @@ class BullMQService implements IQueueService {
   private worker: Worker;
 
   constructor() {
-    const connection = {
+    const connection: any = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
     };
+
+    if (process.env.REDIS_PASSWORD) {
+      connection.password = process.env.REDIS_PASSWORD;
+    }
+
+    if (process.env.REDIS_TLS === 'true') {
+      connection.tls = {};
+    }
 
     this.queue = new Queue('transaction_processing', { connection });
 
