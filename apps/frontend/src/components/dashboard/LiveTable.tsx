@@ -55,7 +55,7 @@ export function LiveTable() {
                 {transaction.merchant_id.substring(0, 8)}...
               </div>
               <div className="col-span-1 truncate pr-2">
-                {transaction.country}
+                {transaction.features?.country || 'US'}
               </div>
               <div className="col-span-1">
                 <span className={`font-medium ${transaction.risk_score > 0.85 ? 'text-destructive' : transaction.risk_score > 0.65 ? 'text-yellow-500' : 'text-emerald-500'}`}>

@@ -70,7 +70,7 @@ export function SARGenerator() {
         
         <div className="flex gap-4">
           <div className="flex-1">
-            <Select onValueChange={setSelectedCase} value={selectedCase} disabled={isLoading}>
+            <Select onValueChange={(val) => val && setSelectedCase(val)} value={selectedCase} disabled={isLoading}>
               <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-100">
                 <SelectValue placeholder={isLoading ? "Loading cases..." : "Select a high-risk case..."} />
               </SelectTrigger>

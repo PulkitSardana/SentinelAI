@@ -36,7 +36,6 @@ export function Navbar() {
         }
       } catch (err) {
         // Suppress noisy console error for active sessions poll failure (e.g. if DB is down)
-        console.warn("Failed to fetch active sessions");
       }
     }
 

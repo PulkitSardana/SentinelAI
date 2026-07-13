@@ -1,13 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Role = 'L1_ANALYST' | 'L2_INVESTIGATOR' | 'COMPLIANCE' | 'ADMIN'
+export type UserRole = 'L1_ANALYST' | 'L2_INVESTIGATOR' | 'COMPLIANCE' | 'ADMIN'
 
 interface User {
   id: string
   name: string
   email: string
-  role: Role
+  role: UserRole
 }
 
 interface AuthState {
@@ -17,7 +17,7 @@ interface AuthState {
   activeViewers: any[] // Store active sessions from the backend
   login: (token: string, user: User) => void
   logout: () => void
-  setRole: (role: Role) => void
+  setRole: (role: UserRole) => void
   setActiveViewers: (viewers: any[]) => void
 }
 

@@ -70,7 +70,7 @@ interface FraudGraphProps {
 }
 
 export function FraudGraph({ onNodeClick }: FraudGraphProps) {
-  const fgRef = useRef<any>()
+  const fgRef = useRef<any>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const containerRef = useRef<HTMLDivElement>(null)
 

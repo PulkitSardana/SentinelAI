@@ -18,12 +18,10 @@ export function useLiveTransactions() {
 
     isConnectingRef.current = true
     
-    console.log('[SSE] Attempting connection to stream...')
     const source = new EventSource(STREAM_URL)
     eventSourceRef.current = source
 
     source.onopen = () => {
-      console.log('[SSE] Connection established')
       setConnected(true)
       isConnectingRef.current = false
       toast.success('System Status: Connected', {
@@ -36,12 +34,11 @@ export function useLiveTransactions() {
         const data = JSON.parse(event.data) as TransactionAlert
         addTransaction(data)
       } catch (err) {
-        console.error('Failed to parse SSE message:', err)
+        // Silently catch parse errors in production
       }
     })
 
     source.onerror = (err) => {
-      console.warn('[SSE] Connection error:', err)
       source.close()
       setConnected(false)
       isConnectingRef.current = false
@@ -55,7 +52,6 @@ export function useLiveTransactions() {
 
     return () => {
       if (eventSourceRef.current) {
-        console.log('[SSE] Closing connection')
         eventSourceRef.current.close()
         setConnected(false)
         isConnectingRef.current = false

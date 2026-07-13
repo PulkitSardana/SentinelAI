@@ -71,20 +71,20 @@ export function VisualRuleBuilder() {
                 {index > 0 && <span className="text-slate-500 font-mono text-sm w-8">AND</span>}
                 {index === 0 && <span className="w-8"></span>}
                 
-                <Select value={cond.feature} onValueChange={(val) => updateCondition(cond.id, 'feature', val)}>
-                  <SelectTrigger className="w-[200px] bg-slate-950 border-slate-800 text-slate-200">
-                    <SelectValue placeholder="Select Feature..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="txn_amount">Transaction Amount</SelectItem>
-                    <SelectItem value="velocity_1h">Velocity (1 hour)</SelectItem>
-                    <SelectItem value="ip_risk_score">IP Risk Score</SelectItem>
-                    <SelectItem value="device_age_days">Device Age (Days)</SelectItem>
-                    <SelectItem value="country_match">Billing/Shipping Country Match</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Select value={cond.feature} onValueChange={(val) => val && updateCondition(cond.id, 'feature', val)}>
+                <SelectTrigger className="w-[200px] bg-slate-950 border-slate-800 text-slate-200">
+                  <SelectValue placeholder="Select Feature..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="txn_amount">Transaction Amount</SelectItem>
+                  <SelectItem value="velocity_1h">Velocity (1 hour)</SelectItem>
+                  <SelectItem value="ip_risk_score">IP Risk Score</SelectItem>
+                  <SelectItem value="device_age_days">Device Age (Days)</SelectItem>
+                  <SelectItem value="country_match">Billing/Shipping Country Match</SelectItem>
+                </SelectContent>
+              </Select>
 
-                <Select value={cond.operator} onValueChange={(val) => updateCondition(cond.id, 'operator', val)}>
+              <Select value={cond.operator} onValueChange={(val) => val && updateCondition(cond.id, 'operator', val)}>
                   <SelectTrigger className="w-[150px] bg-slate-950 border-slate-800 text-slate-200">
                     <SelectValue placeholder="Operator..." />
                   </SelectTrigger>
@@ -130,7 +130,7 @@ export function VisualRuleBuilder() {
           </div>
 
           <div className="pl-8 ml-4">
-            <Select value={action} onValueChange={setAction}>
+            <Select value={action} onValueChange={(val) => val && setAction(val)}>
               <SelectTrigger className="w-[300px] bg-slate-950 border-slate-800 text-slate-200">
                 <SelectValue placeholder="Select Action..." />
               </SelectTrigger>

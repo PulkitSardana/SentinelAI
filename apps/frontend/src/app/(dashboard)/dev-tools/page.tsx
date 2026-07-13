@@ -62,10 +62,10 @@ export default function DevToolsPage() {
       timestamp: now,
       service: 'postgres',
       level: 'INFO',
-      message: `Transaction record committed. Status: ${latestTx.status}.`
+      message: `Transaction record committed. Status: ${latestTx.prediction}.`
     })
 
-    if (latestTx.status === 'DECLINED') {
+    if (latestTx.prediction === 'DECLINED') {
       newLogs.push({
         id: `${latestTx.id}-5`,
         timestamp: now,
